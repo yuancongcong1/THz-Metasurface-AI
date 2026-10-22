@@ -296,7 +296,10 @@ bpy.ops.export_scene.gltf(
     filepath=glb_path,
     export_format="GLB",
     use_selection=True,
-    export_apply=True,
+    # Export the manifold base mesh. The Blender scene retains the visual
+    # bevel modifiers, while GLB avoids vertex splits from sharp normals.
+    export_apply=False,
+    export_normals=False,
 )
 bpy.ops.object.select_all(action="DESELECT")
 bpy.ops.render.render(write_still=True)
