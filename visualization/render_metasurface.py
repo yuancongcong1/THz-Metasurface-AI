@@ -13,6 +13,7 @@ import os
 import sys
 
 import bpy
+import bmesh
 from mathutils import Vector
 
 
@@ -127,20 +128,6 @@ metal = cube(
 )
 
 
-def clip_x(poly, boundary, keep_greater):
-    """Clip a counterclockwise polygon to x >= or x <= boundary."""
-    result = []
-    for a, b in zip(poly, poly[1:] + poly[:1]):
-        ain = a[0] >= boundary if keep_greater else a[0] <= boundary
-        bin = b[0] >= boundary if keep_greater else b[0] <= boundary
-        if ain:
-            result.append(a)
-        if ain != bin:
-            t = (boundary - a[0]) / (b[0] - a[0])
-            result.append((boundary, a[1] + t * (b[1] - a[1])))
-    return result
-
-
 def extruded_polygon(poly, cx, cy, zmin, zmax, vertices, faces):
     signed_area = sum(a[0] * b[1] - b[0] * a[1]
                       for a, b in zip(poly, poly[1:] + poly[:1]))
@@ -159,36 +146,45 @@ def extruded_polygon(poly, cx, cy, zmin, zmax, vertices, faces):
         faces.append((start + i, start + j, start + n + j, start + n + i))
 
 
-def disk_polygon(radius):
-    return [(radius * math.cos(2 * math.pi * i / SEGMENTS),
-             radius * math.sin(2 * math.pi * i / SEGMENTS))
-            for i in range(SEGMENTS)]
+def circular_arc(radius, start, end):
+    steps = max(4, math.ceil(SEGMENTS * abs(end - start) / (2 * math.pi)))
+    return [(radius * math.cos(start + (end - start) * i / steps),
+             radius * math.sin(start + (end - start) * i / steps))
+            for i in range(steps + 1)]
 
 
-def radial_split(upper, center_deg):
-    """Gold wedge joining the inner cap to the outer sheet."""
-    steps = 16
-    first = math.radians(center_deg - SPLIT_SPAN_DEG / 2)
-    last = math.radians(center_deg + SPLIT_SPAN_DEG / 2)
-    angles = [first + (last - first) * i / steps for i in range(steps + 1)]
-    side = 1 if upper else -1
-    outer = [(side * OUTER_RADIUS * math.cos(a), OUTER_RADIUS * math.sin(a))
-             for a in angles]
-    inner = [(side * INNER_RADIUS * math.cos(a), INNER_RADIUS * math.sin(a))
-             for a in reversed(angles)]
-    return outer + inner
+def split_semicircle_opening(upper, center_deg):
+    """Trace one cyan opening as a simple contour with the gold notch removed.
+
+    Subtracting this contour directly from the sheet leaves the inner gold cap
+    and its radial connection as part of the SAME solid, without a mesh union.
+    x is perpendicular to the center band; y runs along that band.
+    """
+    outer_end = math.acos((CENTER_BAND / 2) / OUTER_RADIUS)
+    inner_end = math.acos(INNER_CAP_CHORD / INNER_RADIUS)
+    left_split = math.radians(center_deg - SPLIT_SPAN_DEG / 2)
+    right_split = math.radians(center_deg + SPLIT_SPAN_DEG / 2)
+    assert 0 < left_split < right_split < inner_end < outer_end
+
+    contour = circular_arc(OUTER_RADIUS, -outer_end, left_split)
+    contour.append((INNER_RADIUS * math.cos(left_split),
+                    INNER_RADIUS * math.sin(left_split)))
+    contour.extend(circular_arc(INNER_RADIUS, left_split, -inner_end)[1:])
+    # A straight chord is the lower edge of the inner gold cap.
+    contour.append((INNER_RADIUS * math.cos(inner_end),
+                    INNER_RADIUS * math.sin(inner_end)))
+    contour.extend(circular_arc(INNER_RADIUS, inner_end, right_split)[1:])
+    contour.append((OUTER_RADIUS * math.cos(right_split),
+                    OUTER_RADIUS * math.sin(right_split)))
+    contour.extend(circular_arc(OUTER_RADIUS, right_split, outer_end)[1:])
+    # Closing the contour supplies the straight edge beside the center band.
+    return contour if upper else [(-x, y) for x, y in contour]
 
 
-# Each unit has TWO semicircular cyan openings separated by the uninterrupted
-# gold band d. This replaces the earlier, incorrect whole-circle aperture.
-outer_circle = disk_polygon(OUTER_RADIUS)
-inner_circle = disk_polygon(INNER_RADIUS)
-upper_opening = clip_x(outer_circle, CENTER_BAND / 2, True)
-lower_opening = clip_x(outer_circle, -CENTER_BAND / 2, False)
-upper_inner_gold = clip_x(inner_circle, INNER_CAP_CHORD, True)
-lower_inner_gold = clip_x(inner_circle, -INNER_CAP_CHORD, False)
-upper_split = radial_split(True, THETA_DEG)
-lower_split = radial_split(False, PHI_DEG)
+# Each unit has two semicircular openings around one continuous gold strip.
+# A single subtraction per opening leaves one connected gold sheet.
+upper_opening = split_semicircle_opening(True, THETA_DEG)
+lower_opening = split_semicircle_opening(False, PHI_DEG)
 
 cut_vertices, cut_faces = [], []
 for y in MOTIF_Y:
@@ -210,32 +206,36 @@ boolean.object = cutter
 bpy.context.view_layer.objects.active = metal
 bpy.ops.object.modifier_apply(modifier=boolean.name)
 bpy.data.objects.remove(cutter, do_unlink=True)
-edge = metal.modifiers.new("Soft metal edges", "BEVEL")
-edge.width = 0.009
+
+# Enforce connectivity before saving either model file.
+if metal.data.validate(verbose=False):
+    raise RuntimeError("Gold mesh required validation repairs")
+topology = bmesh.new()
+topology.from_mesh(metal.data)
+if any(not item.is_manifold for item in topology.edges):
+    raise RuntimeError("Gold mesh has an open or non-manifold edge")
+unseen = set(topology.verts)
+components = 0
+while unseen:
+    components += 1
+    stack = [unseen.pop()]
+    while stack:
+        vertex = stack.pop()
+        for item in vertex.link_edges:
+            neighbor = item.other_vert(vertex)
+            if neighbor in unseen:
+                unseen.remove(neighbor)
+                stack.append(neighbor)
+topology.free()
+if components != 1:
+    raise RuntimeError(f"Gold mesh is split into {components} components")
+print("GOLD_CONNECTED_COMPONENTS=1; GOLD_NONMANIFOLD_EDGES=0")
+
+edge = metal.modifiers.new("Soft continuous metal edges", "BEVEL")
+edge.width = 0.006
 edge.segments = 3
 edge.affect = "EDGES"
 metal.modifiers.new("Weighted normals", "WEIGHTED_NORMAL")
-
-# Inner gold semicircles and narrow radial gold splits leave the cyan annular
-# bands visible. Both splits point toward the same end of the central strip.
-insert_vertices, insert_faces = [], []
-for y in MOTIF_Y:
-    for x in MOTIF_X:
-        for region in (upper_inner_gold, lower_inner_gold,
-                       upper_split, lower_split):
-            extruded_polygon(region, x, y, 0, METAL_THICKNESS,
-                             insert_vertices, insert_faces)
-insert_mesh = bpy.data.meshes.new("Inner caps and radial splits")
-insert_mesh.from_pydata(insert_vertices, [], insert_faces)
-insert_mesh.update()
-inserts = bpy.data.objects.new("Inner caps and radial splits", insert_mesh)
-model_collection.objects.link(inserts)
-inserts.data.materials.append(gold)
-insert_bevel = inserts.modifiers.new("Soft insert edges", "BEVEL")
-insert_bevel.width = 0.006
-insert_bevel.segments = 2
-insert_bevel.affect = "EDGES"
-inserts.modifiers.new("Weighted normals", "WEIGHTED_NORMAL")
 
 # Studio environment is excluded from the portable GLB model.
 floor = cube(
@@ -289,7 +289,7 @@ scene.render.image_settings.color_mode = "RGBA"
 bpy.context.preferences.filepaths.save_version = 0
 bpy.ops.wm.save_as_mainfile(filepath=blend_path)
 bpy.ops.object.select_all(action="DESELECT")
-for obj in (substrate, metal, inserts):
+for obj in (substrate, metal):
     obj.select_set(True)
 bpy.context.view_layer.objects.active = metal
 bpy.ops.export_scene.gltf(
