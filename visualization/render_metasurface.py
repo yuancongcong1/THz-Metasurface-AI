@@ -25,6 +25,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--output-dir", default=os.path.join(os.getcwd(), "outputs"))
 parser.add_argument("--resolution-x", type=int, default=2200)
 parser.add_argument("--resolution-y", type=int, default=1500)
+parser.add_argument("--style", choices=("paper", "midnight"), default="midnight")
+parser.add_argument("--view", choices=("elevated", "plan"), default="elevated")
 args = parser.parse_args(args_after_double_dash())
 output_dir = os.path.abspath(args.output_dir)
 os.makedirs(output_dir, exist_ok=True)
@@ -33,6 +35,7 @@ blend_path = os.path.join(output_dir, "THz_metasurface_4x4.blend")
 glb_path = os.path.join(output_dir, "THz_metasurface_4x4.glb")
 image_path = os.path.join(output_dir, "THz_metasurface_4x4_render.png")
 detail_path = os.path.join(output_dir, "THz_metasurface_unit_detail.png")
+closeup_path = os.path.join(output_dir, "THz_metasurface_array_closeup.png")
 
 # Relative proportions reconstructed from the illustration. The substrate is
 # four pitches wide, eight pitches long; the 4x4 motifs occupy its front half.
@@ -88,9 +91,15 @@ def material(name, color, metallic=0.0, roughness=0.35):
     return mat
 
 
-gold = material("Satin gold | patterned metal", (0.92, 0.67, 0.13), 0.72, 0.27)
-cyan = material("Cyan dielectric substrate", (0.045, 0.52, 0.72), 0.10, 0.28)
-floor_mat = material("Deep slate studio floor", (0.018, 0.034, 0.057), 0.13, 0.48)
+if args.style == "paper":
+    # Soft, high-key palette suited to a publication figure or a light PPT.
+    gold = material("Warm satin gold", (0.90, 0.66, 0.10), 0.36, 0.35)
+    cyan = material("Deep blue dielectric", (0.020, 0.29, 0.52), 0.03, 0.32)
+    floor_mat = material("Warm porcelain floor", (0.90, 0.92, 0.91), 0.0, 0.84)
+else:
+    gold = material("Satin gold | patterned metal", (0.95, 0.66, 0.12), 0.64, 0.29)
+    cyan = material("Cyan dielectric substrate", (0.025, 0.43, 0.62), 0.06, 0.28)
+    floor_mat = material("Deep slate studio floor", (0.018, 0.034, 0.057), 0.13, 0.48)
 
 
 def cube(name, dimensions, location, mat, collection, bevel=0.0):
@@ -239,7 +248,7 @@ metal.modifiers.new("Weighted normals", "WEIGHTED_NORMAL")
 
 # Studio environment is excluded from the portable GLB model.
 floor = cube(
-    "Studio floor", (200, 200, 0.05), (0, 0, -0.75),
+    "Studio floor", (200, 200, 0.10), (0, 0, -0.65),
     floor_mat, studio_collection,
 )
 
@@ -258,18 +267,23 @@ def area_light(name, location, power, size, color):
     return obj
 
 
-area_light("Warm key", (-4, -6, 9), 1700, 7, (1.0, 0.86, 0.67))
-area_light("Cool fill", (6, 1, 7), 1150, 8, (0.68, 0.85, 1.0))
-area_light("Back rim", (-1, 6, 6), 1050, 6, (0.83, 0.94, 1.0))
+if args.style == "paper":
+    area_light("Large neutral key", (-5, -7, 10), 1100, 9, (1.0, 0.94, 0.84))
+    area_light("Soft sky fill", (7, 2, 9), 620, 11, (0.79, 0.90, 1.0))
+    area_light("Back edge", (-2, 7, 8), 380, 9, (1.0, 0.98, 0.93))
+else:
+    area_light("Warm key", (-4, -6, 9), 1700, 7, (1.0, 0.86, 0.67))
+    area_light("Cool fill", (6, 1, 7), 1150, 8, (0.68, 0.85, 1.0))
+    area_light("Back rim", (-1, 6, 6), 1050, 6, (0.83, 0.94, 1.0))
 
 camera_data = bpy.data.cameras.new("Orthographic isometric camera")
 camera = bpy.data.objects.new("Orthographic isometric camera", camera_data)
 studio_collection.objects.link(camera)
-camera.location = (12, -12, 12)
+camera.location = (18, -8, 18) if args.view == "elevated" else (18, -8, 27)
 target = Vector((0, 0, -0.12))
 camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
 camera_data.type = "ORTHO"
-camera_data.ortho_scale = 10.5
+camera_data.ortho_scale = 10.8 if args.view == "elevated" else 11.2
 bpy.context.scene.camera = camera
 
 scene = bpy.context.scene
@@ -280,7 +294,8 @@ scene.render.resolution_percentage = 100
 scene.render.image_settings.file_format = "PNG"
 scene.render.film_transparent = False
 scene.render.filepath = image_path
-scene.world.color = (0.015, 0.025, 0.045)
+scene.world.color = ((0.86, 0.89, 0.90) if args.style == "paper"
+                     else (0.015, 0.025, 0.045))
 scene.view_settings.view_transform = "AgX"
 scene.view_settings.look = "AgX - Medium High Contrast"
 scene.render.image_settings.color_mode = "RGBA"
@@ -304,6 +319,18 @@ bpy.ops.export_scene.gltf(
 bpy.ops.object.select_all(action="DESELECT")
 bpy.ops.render.render(write_still=True)
 
+# Raised oblique crop of the patterned half. This is a second camera framing,
+# not a change to the geometry or the saved overview camera in the BLEND file.
+camera.location = (11, -9, 17)
+camera.rotation_euler = (
+    Vector((0, -2.0, -0.10)) - camera.location
+).to_track_quat("-Z", "Y").to_euler()
+camera_data.ortho_scale = 6.5
+scene.render.resolution_x = 1700
+scene.render.resolution_y = 1300
+scene.render.filepath = closeup_path
+bpy.ops.render.render(write_still=True)
+
 # A direct top view makes the corrected inner arcs and angular splits easy to
 # compare with the user's annotated unit-cell diagram.
 camera.location = (0.5, -2.5, 10)
@@ -317,5 +344,6 @@ bpy.ops.render.render(write_still=True)
 print(f"BLEND={blend_path}")
 print(f"GLB={glb_path}")
 print(f"RENDER={image_path}")
+print(f"CLOSEUP={closeup_path}")
 print(f"DETAIL={detail_path}")
 
