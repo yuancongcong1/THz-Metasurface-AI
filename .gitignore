@@ -251,3 +251,6 @@ __marimo__/
 id_rsa*
 .idea/
 .vscode/
+
+# Local CST sweep projects, completion markers, and exports
+cst_runs/

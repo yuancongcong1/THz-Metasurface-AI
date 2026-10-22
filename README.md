@@ -1,11 +1,12 @@
 # THz-Metasurface-AI
 
-太赫兹超表面研究代码仓库。目前收录 THz-TDS 模拟信号生成和时域数据处理的 MATLAB 脚本，以及基于 Blender 的结构示意图建模与渲染脚本。Python 正向/逆向模型与 CST 自动化脚本尚未上传。
+太赫兹超表面研究代码仓库。目前收录 THz-TDS 模拟信号生成和时域数据处理的 MATLAB 脚本，以及基于 Blender 的结构示意图建模与渲染脚本。Python 正向/逆向模型尚未上传。
 
 ## 目录
 
 - `matlab/tds/data_sin_shengcheng.m`：生成模拟参考/样品时域信号，绘制时域与频域图，并在 MATLAB 当前工作目录写出 `THz_simulated.xlsx`。
 - `matlab/tds/shujuchuli.m`：读取时域数据，检查采样与单位，截取信号、可选加高斯窗、计算 FFT 幅度谱和幅度透射谱。
+- `matlab/cst/`：通用参数生成与 MATLAB–CST 联动扫描脚本；配置步骤和 AuSRR 随机性评估见 [`matlab/cst/README.md`](matlab/cst/README.md)。
 - `visualization/render_metasurface.py`：使用 Blender 生成 4×4 阵列示意模型、渲染图和可编辑模型文件；运行方法见 `visualization/README.md`。
 
 ## 使用 MATLAB 示例
