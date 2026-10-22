@@ -218,3 +218,36 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Research datasets, generated outputs, and model weights
+/data/
+/datasets/
+/raw_data/
+/results/
+/outputs/
+/checkpoints/
+/runs/
+*.csv
+*.tsv
+*.dat
+*.mat
+*.xlsx
+*.xls
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.cst
+
+# Local credentials and editor state
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+.idea/
+.vscode/
