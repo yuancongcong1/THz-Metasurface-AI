@@ -1,5 +1,7 @@
 # Python 共振 Q 值工具
 
+第一次使用请看 [逐步指南](../../docs/START_HERE.md)。仓库根目录的 `fit_q.py` 是较短的命令入口。
+
 支持 Lorentzian、Fano、Gaussian、Voigt、pseudo-Voigt；幅值/功率/dB/复数输入，峰/谷拟合、自动模型比较和批处理。
 
 在仓库根目录运行：

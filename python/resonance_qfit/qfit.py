@@ -286,11 +286,12 @@ def _one_fit(f, power, model, baseline, feature, frequency_unit, n_starts):
     characteristic_width = min(width, fwhm) if fwhm else width
     local = np.abs(f - center) <= characteristic_width
     gaps = np.diff(f)
-    # Count actual samples across the narrower relevant width, not plotted pixels.
+    # Count input-file intervals; an interpolated export does not establish
+    # the solver's true frequency resolution.
     spacing = float(np.max(gaps[np.flatnonzero(local[:-1] | local[1:])])) if np.any(local) else float(np.max(gaps))
     samples_per_width = characteristic_width / spacing
     if samples_per_width < 8:
-        warnings.append("Undersampled resonance: fewer than 8 actual intervals across the relevant linewidth.")
+        warnings.append("Undersampled input: fewer than 8 input intervals across the relevant linewidth.")
     if min(center - f[0], f[-1] - center) < width:
         warnings.append("Resonance center is within one linewidth of a window edge; widen the fitting window.")
     if np.sqrt(rss / n) > .05 * max(abs(strength), np.finfo(float).eps):
@@ -302,7 +303,7 @@ def _one_fit(f, power, model, baseline, feature, frequency_unit, n_starts):
                    "r_squared_power": 1 - rss / ss if ss > 0 else None,
                    "aicc": aicc, "bic": float(n * np.log(variance) + k * np.log(n)),
                    "optimizer_converged": bool(opt.success), "shape_at_bound": hit_bound,
-                   "actual_intervals_per_relevant_linewidth": float(samples_per_width),
+                   "input_intervals_per_relevant_linewidth": float(samples_per_width),
                    "half_contrast_left": left, "half_contrast_right": right,
                    "feature_power": float(yd[idx]), "feature_contrast": strength,
                    "frequency_3db_peak": peak3,

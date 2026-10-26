@@ -1,5 +1,7 @@
 # 共振线形拟合与 Q 值计算
 
+不熟悉代码时先看 [第一次使用指南](START_HERE.md)。MATLAB 可以直接打开根目录 `START_QFIT.m` 点“运行”；`EXAMPLE_P260R110.m` 提供指定文件窗口的示例；Python 可使用根目录 `fit_q.py`。
+
 本工具面向 CST 导出的频率响应以及实验频谱，提供 Python 和 MATLAB 两套实现。支持 **Lorentzian、Fano、Gaussian、Voigt、pseudo-Voigt**，支持峰和谷、常数或线性局部背景、模型比较和批处理。不做平滑，不替换尖峰，不从截图自动生成“真值”。
 
 ## 先选对数据类型

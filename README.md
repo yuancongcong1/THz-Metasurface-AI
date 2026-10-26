@@ -1,5 +1,9 @@
 # THz-Metasurface-AI
 
+**第一次使用：先看 [逐步操作指南](docs/START_HERE.md)。** 在 MATLAB 中打开根目录 `START_HERE.m`，点绿色“运行”即可打开任务菜单。
+
+用 `p260r110.txt` 计算 Q：打开 `EXAMPLE_P260R110.m` 点“运行”；换数据用 `START_QFIT.m`。Python 可用根目录 `fit_q.py`。完整文件夹需要一起下载并解压。
+
 太赫兹超表面研究代码仓库。目前收录 THz-TDS 模拟信号生成和时域数据处理的 MATLAB 脚本，以及基于 Blender 的结构示意图建模与渲染脚本。Python 正向/逆向模型尚未上传。
 
 ## 目录

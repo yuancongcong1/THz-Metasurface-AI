@@ -76,6 +76,10 @@ r=fit_resonance_q(ff,yy,'Model','lorentzian','NumStarts',6);
 save_qfit_result(r,fullfile(outputDir,'io_smoke'),makePlot);
 saved=jsondecode(fileread(fullfile(outputDir,'io_smoke.json')));
 assert(abs(saved.q_resonance-55)<.02,'JSON export failed.');
+viaFile=qfit_file(source,'Model','lorentzian','InputKind','amplitude', ...
+    'Window',[.27 .39],'ShowFigure',false,'MakePlot',false,'NumStarts',4, ...
+    'OutputPrefix',fullfile(outputDir,'file_entry'));
+assert(abs(viaFile.q_resonance-55)<.02,'File-based entry point failed.');
 if makePlot
     inputFolder=fullfile(outputDir,'batch_input');if ~isfolder(inputFolder),mkdir(inputFolder);end
     copyfile(source,fullfile(inputFolder,'good.txt'));
@@ -86,5 +90,6 @@ if makePlot
         'Batch errors must be recorded while other files continue.');
 end
 fid=fopen(fullfile(outputDir,'test_results.json'),'w');fprintf(fid,'%s',jsonencode(records));fclose(fid);
-fprintf('All MATLAB numerical and file/plot tests passed.\n');
+if makePlot,fprintf('All MATLAB numerical and file/plot tests passed.\n');
+else,fprintf('All MATLAB numerical and file tests passed (plots skipped).\n');end
 end
