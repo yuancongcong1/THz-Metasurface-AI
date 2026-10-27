@@ -1,6 +1,6 @@
 # 共振线形拟合与 Q 值计算
 
-不熟悉代码时先看 [第一次使用指南](START_HERE.md)。MATLAB 可以直接打开根目录 `START_QFIT.m` 点“运行”；`EXAMPLE_P260R110.m` 提供指定文件窗口的示例；Python 可使用根目录 `fit_q.py`。
+不熟悉代码时先看 [使用指南](START_HERE.md)。图形界面使用根目录单文件 `qcalc_gui.m` 或 `qcalc_gui.py`；无图形服务器或批处理仍可使用原函数库及 `fit_q.py`。
 
 本工具面向 CST 导出的频率响应以及实验频谱，提供 Python 和 MATLAB 两套实现。支持 **Lorentzian、Fano、Gaussian、Voigt、pseudo-Voigt**，支持峰和谷、常数或线性局部背景、模型比较和批处理。不做平滑，不替换尖峰，不从截图自动生成“真值”。
 
@@ -104,15 +104,15 @@ print(r.f0, r.q_resonance, r.q_spectral, r.warnings)
 使用基础 MATLAB 的 `fminsearch`，不依赖 Optimization Toolbox 或 Curve Fitting Toolbox。Voigt 用复误差函数的有理展开计算，方法见 Weideman 1994。界面/导出功能建议 MATLAB R2020a+。
 
 ```matlab
-addpath('matlab/resonance_qfit');
-run_qfit                  % 选择文本谱，输入拟合频率上下限
+qcalc_gui                 % 根目录单文件图形界面，选择文件和窗口
 ```
 
-运行前在 `run_qfit.m` 顶部设置 `cfg.inputKind`、`cfg.model` 和 `cfg.feature`。默认 `amplitude / fano / peak`。输出在输入文件夹下的 `qfit_results/`，含时间戳。
+在窗口中选择输入类型、线形、背景、峰/谷和频率上下限，计算后点击导出。GUI 默认显示极点 Q（Fano/Lorentzian）或谱宽 Q（Gaussian/Voigt）。Python 还提供与原筛选局部拟合相同的模式，以及半突出度测宽；GUI 的频率窗口统一为 THz。原函数调用保留输入频率单位。
 
 函数方式：
 
 ```matlab
+addpath('matlab/resonance_qfit');
 [f, amp] = read_cst_spectrum('D:/spectra/S21.txt', 1, 2);
 r = fit_resonance_q(f, amp, 'Model','fano', 'InputKind','amplitude', ...
     'Feature','peak', 'Window',[0.30 0.36], 'FrequencyUnit','THz');
