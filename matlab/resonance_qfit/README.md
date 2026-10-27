@@ -1,18 +1,20 @@
 # MATLAB 共振 Q 值工具
 
-新手建议直接打开仓库根目录 `START_QFIT.m` 点“运行”，按弹窗选择文件和数据类型，在频谱上选择拟合窗口。`EXAMPLE_P260R110.m` 已设置最新示例的 0.468–0.482 THz 窗口；`EXAMPLE_P260R110_TWO_POL.m` 会读取同文件夹的两份偏振谱。输入文件需自行提供。
+交互计算优先使用根目录的 **[qcalc_gui.m](../../qcalc_gui.m)**，只下载该文件即可运行，不需要本目录。窗口中可选文件、频率区间、线形、背景和峰/谷，并导出结果。操作见 [使用指南](../../docs/START_HERE.md)。
 
-逐步说明见 [第一次使用指南](../../docs/START_HERE.md)。
+本目录保留不同用途的函数接口、批处理和验证：
 
-在仓库根目录的 MATLAB 命令窗口运行：
+- `fit_resonance_q.m`：直接拟合数组，支持 Fano、Lorentzian、Gaussian、Voigt、pseudo-Voigt。
+- `qfit_file.m`：以文件为输入调用拟合并保存结果。
+- `batch_qfit.m`：批量处理单组频谱文件。
+- `read_cst_spectrum.m`、`save_qfit_result.m`：读写辅助。
+- `demo_qfit.m`、`test_qfit.m`：合成数据演示及数值检查。
 
 ```matlab
 addpath('matlab/resonance_qfit');
-run_qfit
+[f, amp] = read_cst_spectrum('S21.txt');
+r = fit_resonance_q(f, amp, 'Model','fano', 'Window',[.46 .49]);
+disp(r.q_resonance);
 ```
 
-在 `run_qfit.m` 顶部选择幅值/功率/dB/复数和线形。支持 Lorentzian、Fano、Gaussian、Voigt、pseudo-Voigt。`fit_resonance_q.m` 可直接处理数组，`batch_qfit.m` 可批处理。
-
-不依赖额外拟合工具箱；使用基础 MATLAB `fminsearch`，多初值优化。演示：`demo_qfit`；数值和读写测试：`test_qfit`。
-
-Fano 的拟合极点 Q 与可见峰/谷宽度 Q 可能不同。完整用法、公式、输出定义和限制见 [说明文档](../../docs/resonance_qfit.md)。
+示例窗口应改成你的实际共振区间。使用基础 MATLAB `fminsearch`，无需额外拟合工具箱。Fano 极点 Q 与可见峰宽 Q 不同；完整定义见 [说明文档](../../docs/resonance_qfit.md)。
