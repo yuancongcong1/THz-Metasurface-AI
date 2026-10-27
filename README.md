@@ -1,8 +1,13 @@
 # THz-Metasurface-AI
 
-**第一次使用：先看 [逐步操作指南](docs/START_HERE.md)。** 在 MATLAB 中打开根目录 `START_HERE.m`，点绿色“运行”即可打开任务菜单。
+**Q 值可视化计算器：只下载一个文件即可运行。**
 
-用 `p260r110.txt` 计算 Q：打开 `EXAMPLE_P260R110.m` 点“运行”；同时比较两份偏振数据可运行 `EXAMPLE_P260R110_TWO_POL.m`。换数据用 `START_QFIT.m`。Python 可用根目录 `fit_q.py`。完整文件夹需要一起下载并解压。
+- **MATLAB**：[qcalc_gui.m](qcalc_gui.m)，打开后运行，或在当前文件夹输入 `qcalc_gui`。建议 R2020b+，无需额外工具箱。
+- **Python**：[qcalc_gui.py](qcalc_gui.py)，运行 `python qcalc_gui.py`。需要 NumPy、SciPy、Matplotlib 和 Tkinter。
+
+两版都支持设置频率窗口、选择 Fano/Lorentzian/Gaussian/Voigt 等线形、峰/谷和拟合背景，以及查看残差、导出结果。Python 的“筛选同算法”模式复用原筛选的局部 Q 算法；MATLAB 使用完整指定窗口拟合。不同定义和窗口的 Q 不应混用。详细操作见 [使用指南](docs/START_HERE.md)。
+
+仓库其他任务仍可通过 `START_HERE.m` 打开；批处理和函数调用保留在下方工具目录。
 
 太赫兹超表面研究代码仓库。目前收录 THz-TDS 模拟信号生成和时域数据处理的 MATLAB 脚本，以及基于 Blender 的结构示意图建模与渲染脚本。Python 正向/逆向模型尚未上传。
 
@@ -13,7 +18,7 @@
 - `matlab/cst/`：通用参数生成与 MATLAB–CST 联动扫描脚本；配置步骤和 AuSRR 随机性评估见 [`matlab/cst/README.md`](matlab/cst/README.md)。
 - `matlab/cst/sankaiKou/`：三开口环槽单元的 400 组受约束抽样与联动扫描实例，含参数含义、几何约束和续扫说明，见 [`matlab/cst/sankaiKou/README.md`](matlab/cst/sankaiKou/README.md)。
 - `python/resonance_qfit/`：Python 共振线形拟合、Q 值计算和批处理，支持 Lorentzian、Fano、Gaussian、Voigt、pseudo-Voigt。
-- `matlab/resonance_qfit/`：基础 MATLAB 实现的同类 Q 值工具，无需额外拟合工具箱；运行 `run_qfit` 可选择 CST 导出文件。
+- `matlab/resonance_qfit/`：基础 MATLAB 的函数调用、批处理和数值测试；交互计算使用根目录 `qcalc_gui.m`。
 - `visualization/render_metasurface.py`：使用 Blender 生成 4×4 阵列示意模型、渲染图和可编辑模型文件；运行方法见 `visualization/README.md`。
 
 ## 使用 MATLAB 示例
