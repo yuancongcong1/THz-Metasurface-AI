@@ -1,129 +1,56 @@
-# 第一次使用这个仓库
+# 使用指南
 
-先做最容易的一件事：用 `p260r110.txt` 算 Q。完整文件夹需要保留，不要只下载一个 `.m` 文件。
+## 只计算一条谱的 Q：下载一个文件即可
 
-## 一 先拿到代码
+- MATLAB：下载根目录 [qcalc_gui.m](../qcalc_gui.m)，在 MATLAB 中打开后运行。建议 MATLAB R2020b+，无需额外工具箱。
+- Python：下载根目录 [qcalc_gui.py](../qcalc_gui.py)，运行 `python qcalc_gui.py`。需要 NumPy、SciPy、Matplotlib、Tkinter；Windows 常规 Python/Anaconda 一般自带 Tkinter。Linux 图形界面还需要可用的显示环境。
 
-仓库现为公开仓库。浏览器打开：
-
-https://github.com/yuancongcong1/THz-Metasurface-AI
-
-点击绿色 `Code` → `Download ZIP`，再右键解压 ZIP。建议把解压后包含 `START_HERE.m` 的文件夹放到：
-
-```text
-E:\YCC\THz-Metasurface-AI\
-```
-
-位置可以不同；入口会自动寻找自身文件夹。不要在压缩包预览里直接运行文件。
-
-“离线代码包”就是同样的源码 ZIP。把它复制到另一台服务器后解压，运行时不需要连接 GitHub；服务器仍需安装 MATLAB，或者 Python 及相应依赖。ZIP 中没有个人实测/CST 数据、MATLAB、CST 或许可证。
-
-## 二 用你的 p260r110 数据运行 MATLAB
-
-准备好数据文件：
-
-```text
-E:\YCC\20261026\p260r110.txt
-```
-
-1. 打开 MATLAB。
-2. 点击“打开”，选择代码文件夹根目录中的 `EXAMPLE_P260R110.m`。
-3. 点击编辑器顶部的绿色“运行”按钮。如果 MATLAB 问是否更改文件夹或添加路径，选择更改文件夹即可。
-4. 程序会读取上面的 E 盘路径；如果该电脑没有这个路径，会弹窗让你选择 `p260r110.txt`。
-5. 等命令窗口打印结果。程序会自动设置 **Magnitude 幅值、Fano、透射峰、THz、拟合窗口 0.468–0.482 THz**，并弹出拟合/残差图。
-
-这份示例文件现在覆盖 **0.1–0.5 THz**，和同目录的 `p260r110-2.txt` 分别是两种入射偏振。两份文件均使用约 0.474 THz 的峰及相邻的谷。旧版 `p260r110.txt` 曾只导出 0.45–0.50 THz，旧示例使用 0.466–0.471 THz；重新导出后文件名相同，但拟合窗口必须跟着峰位改变。`0.30–0.36 THz` 只是其他示例的占位范围。
-
-若要自动处理这两种偏振，打开根目录 `EXAMPLE_P260R110_TWO_POL.m` 点击“运行”。脚本会读取同文件夹的 `p260r110.txt` 和 `p260r110-2.txt`；若 E 盘路径不存在，会请你选择两文件所在文件夹，并分别输出结果。只读取原始 TXT，原始数据不会上传到 GitHub。
-
-输出位于数据旁边新建的文件夹：
-
-```text
-E:\YCC\20261026\qfit_results\
-  p260r110_日期时间.json  参数、Q值、提示
-  p260r110_日期时间.csv   输入功率、拟合功率、背景、残差
-  p260r110_日期时间.png   拟合图和残差图
-```
-
-`result.q_resonance` 是 Fano 的拟合极点线宽 Q；`result.q_spectral` 是减去拟合背景后可见峰的半高宽 Q；`result.q_3db` 是完整功率峰下降一半的带宽 Q。三者定义不同，不应混用。新谱的非零背景可能使峰两侧没有完整功率减半交点，此时 `q_3db` 显示空值，这是正确的，不要强填数字。参考文献用哪种定义，就选相同的列。
-
-拟合得到的 Q 只描述导出曲线。导出点很多不代表 CST 在每一点都实际求解，也不能证明很尖的峰已完成网格/频率收敛验证。Fano 拟合不能识别或排除 BIC/准 BIC。
-
-## 三 换成另一份谱时怎样操作
-
-打开根目录 `START_QFIT.m`，点击绿色“运行”，依次操作：
-
-1. 选择 TXT/CSV/TSV/DAT 文件。
-2. 选择数据类型。CST 图标题为 `S-Parameters [Magnitude]` 时选第一项 **Magnitude**；已经平方的透射率选 Power；dB 曲线选第三项。
-3. 确认列号。通常第 1 列频率、第 2 列信号，单位 THz。
-4. 频谱图出现后，可以用缩放功能放大一个目标共振。点图下方“放大完成，开始点击左右边界”按钮。
-5. 在共振左侧、右侧各点击一次。对 Fano，窗口应同时包含相邻峰和谷，并留出两侧背景。
-6. 在弹窗中核对上下限，再选 Fano、Lorentzian 或 Auto。
-7. 选择“峰”或“谷”，等待输出。
-
-多个远离的共振分开拟合。不要用单个 Fano 拟合所有玻璃起伏和多个模式。
-
-## 四 Python 的完整命令
-
-在 Windows 代码文件夹空白处右键“在终端中打开”，依次执行：
-
-```powershell
-python -m pip install -r python/resonance_qfit/requirements.txt
-python fit_q.py "E:\YCC\20261026\p260r110.txt" --kind amplitude --model fano --feature peak --window 0.468 0.482 --output "E:\YCC\20261026\qfit_results\p260r110_python"
-```
-
-第一行安装一次即可；第二行运行你的数据。`--output` 后面是输出前缀，不需要写 `.png` 后缀。相同前缀重跑会更新对应结果，请为要保留的版本换一个前缀。
-
-若电脑提示找不到 `python`，先安装 Python/Anaconda，或打开已安装环境的终端。若提示 `No module named scipy`，在实际运行的那个 Python 环境执行第一行安装命令。
-
-## 五 在其他服务器上用
-
-现在可以匿名下载公开代码。服务器有网络和 Git 时：
+两个文件分别独立运行，**不需要同时下载，也不需要其他仓库源码文件**。Python 首次安装依赖可运行：
 
 ```bash
-git clone https://github.com/yuancongcong1/THz-Metasurface-AI.git
-cd THz-Metasurface-AI
-python3 -m pip install -r python/resonance_qfit/requirements.txt
-python3 fit_q.py "/home/你的账号/data/p260r110.txt" --kind amplitude --model fano --feature peak --window 0.468 0.482 --output results/p260r110
+python -m pip install numpy scipy matplotlib
+python qcalc_gui.py
 ```
 
-最后一行的输入路径要改为数据在服务器上的真实位置。Windows 的 `E:\...` 路径不会自动出现在 Linux 服务器上；需要把 TXT 数据也复制过去。公开仓库只解决代码访问权限，不解决服务器断网、DNS/代理或 Python 依赖缺失。
+## 操作
 
-没有网络时，将代码 ZIP 和你自己的 TXT 文件分别上传到服务器再解压。MATLAB 路线需要服务器有 MATLAB；Python 路线需要服务器已有 NumPy、SciPy、Matplotlib，或者另外准备匹配其系统/Python版本的离线依赖包。
+1. 打开你的单组 TXT/CSV 数据。`p260r110.txt` 的默认设置为幅度、THz、频率列 1、数据列 2。
+2. 如果文件实际为功率、dB 或复数，选择对应类型和列号后重新读取。内部按功率谱拟合：幅度平方、dB 转 `10^(dB/10)`。
+3. 输入频率窗口上下限，单位 THz。Python 也可以在图上拖动选区。
+4. 多峰时点选目标峰并设定“选中峰邻域”，或手动缩小窗口，避免把多个模式拟合成单个共振。
+5. 选择计算方式；自定义拟合可选择 Fano、Lorentzian、Gaussian、Voigt、pseudo-Voigt 和常数/线性背景。
+6. 计算后对照拟合曲线和残差，滚动查看定义与可靠性提示。稍微调整窗口，检查 Q 是否稳定。
+7. 导出 JSON、CSV、PNG；输入文件由你自行提供，不随仓库发布。
 
-## 六 仓库里其他脚本分别做什么
+Fano 的极点 Q=`f0/Gamma`；半突出度、拟合半对比度、绝对半功率 Q 是不同指标，不能混用。Python 的“筛选同算法”按原局部窗口规则计算；MATLAB 和 Python 自定义拟合使用整个指定区间，不保证不同窗口/优化器给出相同数值。导出点密不代表求解器的真实采样足够密。
 
-| 想做的事 | 文件 | 操作前需要设置 | 得到什么 |
-|---|---|---|---|
-| 打开任务菜单 | 根目录 `START_HERE.m` | 无 | 选择任务的入口 |
-| 拟合一条 CST 谱、算 Q | `START_QFIT.m` / `EXAMPLE_P260R110.m` | 数据类型、一个共振的窗口 | Q、拟合图、残差和参数 |
-| 对比两份偏振谱 | `EXAMPLE_P260R110_TWO_POL.m` | 两个 TXT 在同一文件夹 | 两条偏振分别拟合和汇总 |
-| 一批 TXT 谱算 Q | `matlab/resonance_qfit/batch_qfit.m` 或 Python 的 `batch_qfit.py` | 输入/输出目录、同一模式窗口 | 每条谱的结果和 summary.csv |
-| 生成模拟 THz 时域信号 | `matlab/tds/data_sin_shengcheng.m` | 可先保留默认示例 | 人工生成的参考/样品信号与 THz_simulated.xlsx |
-| 处理实际 THz-TDS 时域数据 | `matlab/tds/shujuchuli.m` | 时间/参考/样品列号、单位、FFT区间、是否加窗 | 时域、FFT幅度谱和幅度透射谱 |
-| 生成 CST 参数表 | `matlab/cst/generate_parameters.m` | 你的结构参数名、范围、几何/加工约束 | parameters.tsv；本步骤不运行 CST |
-| 批量修改参数并运行 CST | `matlab/cst/run_cst_sweep.m` | CST工程、参数表、求解器和结果树路径 | 每组几何的 S21/S11 文件及日志 |
-| 画结构示意图 | `visualization/render_metasurface.py` | Blender、示意图参数和输出目录 | PNG、可编辑 .blend、.glb；不是电磁仿真结果 |
+## 批处理、函数接口与无图形服务器
 
-TDS 示例生成脚本会在当前工作文件夹输出 Excel；从新菜单生成时输出到仓库 `results/tds_demo/`。处理该模拟三列文件时，`shujuchuli.m` 顶部设：
-
-```matlab
-timeCol=1; refCol=2; samCol=3;
-inputTimeUnit='s';
-fftStart=0; fftEnd=20e-12;
-useGaussianWindow=false;
-```
-
-处理实测文件时按实测列号和时域范围设置。不能把默认第 1/3/7 列用于所有文件。
-
-CST 两个脚本当前仍是 **AuSRR 模板**。它们默认的 `p,r,w,d,l1,l2` 参数及 20–30 μm 线宽范围，不适用于你的三开口环槽和大于 30 μm 的加工约束，必须先改。CST 批处理默认结果树使用 mode 2，而你的截图使用 mode 1；也要按实际结果树修改。若导出的是 Magnitude，应使用 `linear`，不能再当 dB 转换。Windows 电脑上需要同时安装 MATLAB 和 CST。
-
-Blender 示意图从仓库根目录执行：
+原有接口仍保留，下载整个仓库后使用：
 
 ```bash
-blender -b --factory-startup --python visualization/render_metasurface.py -- --output-dir outputs --style paper --view plan
+python fit_q.py /path/to/S21.txt --kind amplitude --model fano --feature peak --window 0.468 0.482 --output results/sample --no-plot
+python python/resonance_qfit/batch_qfit.py /path/to/spectra --pattern "*.txt" --kind amplitude --model fano --window 0.468 0.482 --output-dir results/batch --no-plots
 ```
 
-目前仓库尚未提供神经网络正向/逆向训练脚本；参数生成、CST 数据采集、Q 提取和绘图是为后续训练准备的工具。
+窗口只是示例，请改成目标共振区间。命令行版本不需要 Tkinter 图形显示；Python 依赖见 `python/resonance_qfit/requirements.txt`。
 
-更多 Q 定义与拟合限制见 [详细文档](resonance_qfit.md)。
+MATLAB 批处理和直接调用见 [MATLAB 工具说明](../matlab/resonance_qfit/README.md)。两份偏振数据自动比较保留在根目录 `EXAMPLE_P260R110_TWO_POL.m`，需要完整仓库及你自己的两份数据。
+
+## 其他功能
+
+根目录 `START_HERE.m` 仍提供任务菜单；Q 的交互入口统一指向新版单文件界面。
+
+| 功能 | 位置 |
+|---|---|
+| THz 时域模拟信号 | `matlab/tds/data_sin_shengcheng.m` |
+| THz-TDS 数据处理 | `matlab/tds/shujuchuli.m` |
+| CST 通用参数采样与扫描模板 | `matlab/cst/` |
+| 三开口环槽采样与扫描 | [matlab/cst/sankaiKou/](../matlab/cst/sankaiKou/README.md) |
+| 模型示意图绘制 | `visualization/` |
+
+通用 CST 模板的参数与结果树路径需要按实际工程修改；三开口环槽请优先参考专用实例。TDS 处理同样需设置实际列号、单位、FFT 区间及是否加窗。
+
+删除的旧 GUI 向导、重复单谱入口和固定路径单谱示例均已被 `qcalc_gui.m` 替代，历史版本可在 Git 提交记录中找回。数值测试、批处理、函数库及不同任务工具保留。
+
+Q 定义、公式和限制见 [详细文档](resonance_qfit.md)。
